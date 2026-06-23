@@ -36,6 +36,10 @@ data class AppStrings(
     val settingsSubtitle: String,
     val languageLabel: String,
     val openLabel: String,
+    val add: String,
+    val billHeader: String,
+    val billTotal: String,
+    val billClearAll: String,
 )
 
 private val HinglishStrings = AppStrings(
@@ -65,6 +69,10 @@ private val HinglishStrings = AppStrings(
     settingsSubtitle = "App settings",
     languageLabel = "Bhasha",
     openLabel = "Kholein",
+    add = "Jodein",
+    billHeader = "List",
+    billTotal = "Total",
+    billClearAll = "Sab saaf",
 )
 
 private val EnglishStrings = AppStrings(
@@ -94,6 +102,10 @@ private val EnglishStrings = AppStrings(
     settingsSubtitle = "App settings",
     languageLabel = "Language",
     openLabel = "Open",
+    add = "Add",
+    billHeader = "List",
+    billTotal = "Total",
+    billClearAll = "Clear all",
 )
 
 fun stringsFor(language: Language): AppStrings = when (language) {

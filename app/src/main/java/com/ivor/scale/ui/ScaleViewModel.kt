@@ -50,6 +50,39 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
     fun clearWeightTab() { amount = "" }
     fun clearRateTab() { rateKilos = ""; rateGrams = "" }
 
+    // ---- Rate tab running bill -------------------------------------------
+
+    var rateItems by mutableStateOf<List<RateItem>>(emptyList())
+        private set
+
+    val rateItemsTotal: Double
+        get() = rateItems.sumOf { it.amount }
+
+    /** Save the current weight→amount as a bill item, then clear the weight inputs. */
+    fun addRateItem() {
+        val price = Calculator.parse(pricePerKg) ?: return
+        val kilos = Calculator.parse(rateKilos) ?: 0.0
+        val grams = Calculator.parse(rateGrams) ?: 0.0
+        val weightKg = kilos + grams / 1000.0
+        if (weightKg <= 0.0) return
+        val item = RateItem(
+            id = System.nanoTime(),
+            weightLabel = Calculator.formatWeight(weightKg),
+            amount = price * weightKg,
+        )
+        rateItems = rateItems + item
+        rateKilos = ""
+        rateGrams = ""
+    }
+
+    fun removeRateItem(id: Long) {
+        rateItems = rateItems.filterNot { it.id == id }
+    }
+
+    fun clearRateItems() {
+        rateItems = emptyList()
+    }
+
     fun changeLanguage(lang: Language) {
         language = lang
         prefs.edit().putString(KEY_LANGUAGE, lang.name).apply()
@@ -77,3 +110,10 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_LANGUAGE = "language"
     }
 }
+
+/** One saved line in the Rate-tab running bill. */
+data class RateItem(
+    val id: Long,
+    val weightLabel: String,
+    val amount: Double,
+)
