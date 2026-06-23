@@ -32,6 +32,10 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
     var rateGrams by mutableStateOf("")
         private set
 
+    // Optional name for the next bill item (e.g. "Tamatar", "Aloo").
+    var itemName by mutableStateOf("")
+        private set
+
     // App language (persisted across launches).
     var language by mutableStateOf(loadLanguage())
         private set
@@ -40,6 +44,7 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
     fun onAmountChange(v: String) { amount = sanitize(v) }
     fun onRateKilosChange(v: String) { rateKilos = sanitize(v) }
     fun onRateGramsChange(v: String) { rateGrams = sanitize(v) }
+    fun onItemNameChange(v: String) { itemName = v.take(24) }
 
     val weightResult: CalcResult
         get() = Calculator.weightResult(pricePerKg, amount)
@@ -48,7 +53,7 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
         get() = Calculator.rateResult(pricePerKg, rateKilos, rateGrams)
 
     fun clearWeightTab() { amount = "" }
-    fun clearRateTab() { rateKilos = ""; rateGrams = "" }
+    fun clearRateTab() { rateKilos = ""; rateGrams = ""; itemName = "" }
 
     // ---- Rate tab running bill -------------------------------------------
 
@@ -67,12 +72,14 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
         if (weightKg <= 0.0) return
         val item = RateItem(
             id = System.nanoTime(),
+            name = itemName.trim(),
             weightLabel = Calculator.formatWeight(weightKg),
             amount = price * weightKg,
         )
         rateItems = rateItems + item
         rateKilos = ""
         rateGrams = ""
+        itemName = ""
     }
 
     fun removeRateItem(id: Long) {
@@ -114,6 +121,7 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
 /** One saved line in the Rate-tab running bill. */
 data class RateItem(
     val id: Long,
+    val name: String,
     val weightLabel: String,
     val amount: Double,
 )

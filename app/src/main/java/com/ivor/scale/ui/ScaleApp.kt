@@ -2,8 +2,10 @@
 
 package com.ivor.scale.ui
 
-import androidx.activity.compose.BackHandler
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
@@ -11,7 +13,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ButtonGroupDefaults
@@ -27,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -36,18 +42,22 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private enum class Screen { Home, RateWeight, Settings }
@@ -58,11 +68,51 @@ fun ScaleApp(vm: ScaleViewModel = viewModel()) {
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
     val animationsEnabled = rememberAnimationsEnabled()
 
-    BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
+    // Predictive back (Android 13+): as the user drags the back gesture we shrink
+    // and nudge the current detail screen so dismissal feels physical. Committing
+    // the gesture navigates Home; cancelling springs the screen back to rest.
+    val backProgress = remember { Animatable(0f) }
+    var swipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+
+    PredictiveBackHandler(enabled = screen != Screen.Home) { events ->
+        try {
+            events.collect { event ->
+                swipeEdge = event.swipeEdge
+                backProgress.snapTo(event.progress)
+            }
+            // Gesture committed.
+            screen = Screen.Home
+            backProgress.snapTo(0f)
+        } catch (e: CancellationException) {
+            // Gesture cancelled — ease back to rest.
+            backProgress.animateTo(0f)
+        }
+    }
 
     CompositionLocalProvider(LocalStrings provides stringsFor(vm.language)) {
+        // Solid theme-colored backdrop so screen transitions and the predictive
+        // back scale-down never reveal the (white) window background.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+        ) {
         AnimatedContent(
             targetState = screen,
+            modifier = Modifier.graphicsLayer {
+                val p = if (animationsEnabled) backProgress.value else 0f
+                if (p > 0f) {
+                    val scale = lerp(1f, 0.9f, p)
+                    scaleX = scale
+                    scaleY = scale
+                    translationX =
+                        (if (swipeEdge == BackEventCompat.EDGE_LEFT) 1f else -1f) * p * 32.dp.toPx()
+                    val corner = lerp(0f, 28.dp.toPx(), p)
+                    shape = RoundedCornerShape(corner)
+                    clip = true
+                    alpha = lerp(1f, 0.6f, p)
+                }
+            },
             transitionSpec = {
                 if (!animationsEnabled) {
                     EnterTransition.None togetherWith ExitTransition.None
@@ -93,6 +143,7 @@ fun ScaleApp(vm: ScaleViewModel = viewModel()) {
                     onBack = { screen = Screen.Home },
                 )
             }
+        }
         }
     }
 }

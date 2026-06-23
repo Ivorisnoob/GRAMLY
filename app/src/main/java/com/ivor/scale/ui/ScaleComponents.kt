@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -79,6 +80,46 @@ fun NumberField(
         suffix = suffix?.let { { Text(it, style = MaterialTheme.typography.titleMedium) } },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Decimal,
+            imeAction = imeAction,
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onImeAction() },
+            onDone = { onImeAction() },
+        ),
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(Icons.Filled.Clear, contentDescription = "Saaf karein")
+                }
+            }
+        },
+        shape = MaterialTheme.shapes.large,
+    )
+}
+
+/**
+ * A free-text input styled to match [NumberField] — used for the optional item
+ * name on the Rate tab. Words are auto-capitalized; the IME advances to weight.
+ */
+@Composable
+fun NameField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    imeAction: ImeAction = ImeAction.Next,
+    onImeAction: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        singleLine = true,
+        textStyle = MaterialTheme.typography.titleLarge,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            capitalization = KeyboardCapitalization.Words,
             imeAction = imeAction,
         ),
         keyboardActions = KeyboardActions(

@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ivor.scale.domain.CalcResult
 import com.ivor.scale.domain.Calculator
@@ -108,6 +109,11 @@ fun RateTab(
             onValueChange = vm::onPriceChange,
             label = strings.fieldPrice,
             prefix = "₹",
+        )
+        NameField(
+            value = vm.itemName,
+            onValueChange = vm::onItemNameChange,
+            label = strings.fieldItemName,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NumberField(
@@ -254,11 +260,27 @@ private fun RateBillSection(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = item.weightLabel,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (item.name.isNotBlank()) {
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = item.weightLabel,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Text(
+                                text = item.weightLabel,
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                        }
+                    }
                     Text(
                         text = Calculator.formatRupees(item.amount),
                         style = MaterialTheme.typography.bodyLarge,
