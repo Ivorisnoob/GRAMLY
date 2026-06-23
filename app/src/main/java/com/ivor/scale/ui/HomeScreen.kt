@@ -63,11 +63,6 @@ fun HomeScreen(
                 style = MaterialTheme.typography.displayLarge,
                 fontWeight = FontWeight.Black,
             )
-            Text(
-                text = "Bhaav, vajan aur sona — sab ka turant hisaab.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Spacer(Modifier.height(8.dp))
 
             // ── Feature tiles ──
@@ -89,14 +84,6 @@ fun HomeScreen(
                 height = 168.dp,
                 onClick = onOpenGold,
             )
-
-            // ── Info pills ──
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                InfoPill("100% Offline")
-                InfoPill("No Ads")
-                InfoPill("Material You")
-            }
             Spacer(Modifier.height(16.dp))
         }
     }

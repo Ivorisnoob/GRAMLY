@@ -17,10 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -151,10 +149,11 @@ fun GoldScreen(
 }
 
 /**
- * Standard [ButtonGroup] for single-select carat purity. Pressing a carat
- * expands it while its neighbours compress (`animateWidth`), and the selected
- * one keeps its checked shape. Compact padding lets all purities sit in one row;
- * any that don't fit gracefully overflow into a menu.
+ * Single-select connected carat group that spans the full width: equal-weight
+ * [ToggleButton]s with connected leading/middle/trailing shapes. Each button
+ * shape-morphs on press and when checked. (A fixed full width can't be combined
+ * with the ButtonGroup `animateWidth` expand/compress — that crashes — so this
+ * trades the press-expand for reliable edge-to-edge sizing.)
  */
 @Composable
 private fun CaratButtonGroup(
@@ -162,43 +161,32 @@ private fun CaratButtonGroup(
     selected: Int,
     onSelect: (Int) -> Unit,
 ) {
-    val interactionSources = remember(options.size) {
-        List(options.size) { MutableInteractionSource() }
-    }
-    ButtonGroup(
-        overflowIndicator = { menuState ->
-            ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
-        },
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+    Row(
         modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
     ) {
         options.forEachIndexed { index, karat ->
-            customItem(
-                buttonGroupContent = {
-                    ToggleButton(
-                        checked = selected == karat,
-                        onCheckedChange = { onSelect(karat) },
-                        shapes = when (index) {
-                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                            options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                        },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                        interactionSource = interactionSources[index],
-                        modifier = Modifier
-                            .semantics { role = Role.RadioButton }
-                            .animateWidth(interactionSources[index]),
-                    ) {
-                        Text("${karat}K", softWrap = false, maxLines = 1)
-                    }
+            ToggleButton(
+                checked = selected == karat,
+                onCheckedChange = { onSelect(karat) },
+                shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
-                menuContent = {
-                    DropdownMenuItem(
-                        text = { Text("${karat}K") },
-                        onClick = { onSelect(karat) },
-                    )
-                },
-            )
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 22.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { role = Role.RadioButton },
+            ) {
+                Text(
+                    "${karat}K",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    softWrap = false,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
