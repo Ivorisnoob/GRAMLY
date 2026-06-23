@@ -12,7 +12,7 @@ package com.ivor.scale.domain
 object GoldCalculator {
 
     /** Common purities offered in the carat selector (highest first). */
-    val KARATS = listOf(24, 23, 22, 21, 20, 18, 16, 14, 12, 10)
+    val KARATS = listOf(24, 22, 20, 18, 14)
 
     fun result(
         price24Raw: String,

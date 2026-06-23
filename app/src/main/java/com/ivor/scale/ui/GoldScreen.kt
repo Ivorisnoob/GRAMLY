@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+
 package com.ivor.scale.ui
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,56 +13,54 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.ivor.scale.domain.GoldCalculator
 import com.ivor.scale.domain.GoldResult
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoldScreen(
     vm: ScaleViewModel,
     onBack: () -> Unit,
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Gold Calculator",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                },
+            MediumFlexibleTopAppBar(
+                title = { Text("Gold Calculator", fontWeight = FontWeight.Black) },
+                subtitle = { Text("Carat, labour aur GST") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wapas")
                     }
                 },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { innerPadding ->
@@ -78,10 +79,18 @@ fun GoldScreen(
                 prefix = "₹",
             )
 
-            KaratDropdown(
-                selected = vm.goldKarat,
-                onSelected = vm::onGoldKaratChange,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Gold Carat",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                CaratButtonGroup(
+                    options = GoldCalculator.KARATS,
+                    selected = vm.goldKarat,
+                    onSelect = vm::onGoldKaratChange,
+                )
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 NumberField(
@@ -120,9 +129,13 @@ fun GoldScreen(
 
             GoldResultCard(result = vm.goldResult)
 
+            val clearSource = remember { MutableInteractionSource() }
             OutlinedButton(
                 onClick = vm::clearGold,
-                modifier = Modifier.fillMaxWidth(),
+                interactionSource = clearSource,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .expressivePress(clearSource),
             ) {
                 Text("Saaf karein")
             }
@@ -130,43 +143,44 @@ fun GoldScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Standard (non-connected) ButtonGroup for single-select carat purity. Each
+ * button uses the default shape-morphing ToggleButton shapes, and the group's
+ * `animateWidth` makes the pressed button expand while its neighbours compress —
+ * the signature expressive ButtonGroup interaction.
+ */
 @Composable
-private fun KaratDropdown(
+private fun CaratButtonGroup(
+    options: List<Int>,
     selected: Int,
-    onSelected: (Int) -> Unit,
+    onSelect: (Int) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
+    val sources = remember(options.size) { List(options.size) { MutableInteractionSource() } }
+    ButtonGroup(
+        overflowIndicator = { menuState ->
+            ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
+        },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        OutlinedTextField(
-            value = "${selected}K",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Gold Carat") },
-            textStyle = MaterialTheme.typography.headlineSmall,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            com.ivor.scale.domain.GoldCalculator.KARATS.forEach { karat ->
-                DropdownMenuItem(
-                    text = { Text("${karat}K") },
-                    onClick = {
-                        onSelected(karat)
-                        expanded = false
-                    },
-                )
-            }
+        options.forEachIndexed { index, karat ->
+            customItem(
+                buttonGroupContent = {
+                    ToggleButton(
+                        checked = selected == karat,
+                        onCheckedChange = { onSelect(karat) },
+                        interactionSource = sources[index],
+                        modifier = Modifier.animateWidth(sources[index]),
+                    ) {
+                        Text("${karat}K")
+                    }
+                },
+                menuContent = {
+                    DropdownMenuItem(
+                        text = { Text("${karat}K") },
+                        onClick = { onSelect(karat) },
+                    )
+                },
+            )
         }
     }
 }
@@ -218,10 +232,7 @@ private fun GoldResultCard(result: GoldResult) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                text = row.label,
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
+                            Text(text = row.label, style = MaterialTheme.typography.bodyLarge)
                             Text(
                                 text = row.value,
                                 style = MaterialTheme.typography.bodyLarge,
@@ -242,10 +253,10 @@ private fun GoldResultCard(result: GoldResult) {
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                         )
-                        Text(
+                        HeroNumeral(
                             text = result.finalAmount,
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                     }
                 }

@@ -1,5 +1,6 @@
 package com.ivor.scale.ui
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -126,9 +128,13 @@ private fun CalculatorScaffold(
             onCopy = onCopy,
         )
 
+        val clearSource = remember { MutableInteractionSource() }
         OutlinedButton(
             onClick = onClear,
-            modifier = Modifier.fillMaxWidth(),
+            interactionSource = clearSource,
+            modifier = Modifier
+                .fillMaxWidth()
+                .expressivePress(clearSource),
         ) {
             Text("Saaf karein")
         }

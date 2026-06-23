@@ -16,3 +16,7 @@ build/
 local.properties
 /.idea/
 .kotlin/
+
+# Local design reference docs — not for publishing
+/MATERIAL3_EXPRESSIVE_GUIDELINES.md
+/M3_ALPHA16_API_REFERENCE.md

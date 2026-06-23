@@ -143,34 +143,36 @@ fun ResultHeroCard(
                 color = contentColor.copy(alpha = 0.7f),
             )
 
-            val target: String = when (result) {
-                is CalcResult.Success -> result.display
-                is CalcResult.Error -> result.message
-                CalcResult.Empty -> emptyHint
-            }
-            val big = result is CalcResult.Success
+            when (result) {
+                is CalcResult.Success ->
+                    // Giant weight-morphing hero numeral.
+                    HeroNumeral(
+                        text = result.display,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = contentColor,
+                    )
 
-            AnimatedContent(
-                targetState = target,
-                transitionSpec = {
-                    if (animationsEnabled) {
-                        (slideInVertically { it / 2 } + fadeIn())
-                            .togetherWith(slideOutVertically { -it / 2 } + fadeOut())
-                    } else {
-                        EnterTransition.None togetherWith ExitTransition.None
+                else -> {
+                    val target = if (result is CalcResult.Error) result.message else emptyHint
+                    AnimatedContent(
+                        targetState = target,
+                        transitionSpec = {
+                            if (animationsEnabled) {
+                                (slideInVertically { it / 2 } + fadeIn())
+                                    .togetherWith(slideOutVertically { -it / 2 } + fadeOut())
+                            } else {
+                                EnterTransition.None togetherWith ExitTransition.None
+                            }
+                        },
+                        label = "result",
+                    ) { text ->
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
                     }
-                },
-                label = "result",
-            ) { text ->
-                Text(
-                    text = text,
-                    style = if (big) {
-                        MaterialTheme.typography.displaySmall
-                    } else {
-                        MaterialTheme.typography.titleLarge
-                    },
-                    fontWeight = if (big) FontWeight.Black else FontWeight.SemiBold,
-                )
+                }
             }
 
             if (result is CalcResult.Success) {
