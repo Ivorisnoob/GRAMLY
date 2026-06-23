@@ -1,6 +1,5 @@
 package com.ivor.scale.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,12 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Diamond
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -32,21 +30,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/** Shared scalloped silhouette for the feature-tile icon badges. */
+private val CookieBadge = ScallopedShape(lobes = 8, depth = 0.16f)
+
 /**
- * Landing screen. A bold bespoke hero header, two large expressive feature
- * tiles (icon badge, decorative arc, arrow affordance) and a row of info pills.
+ * Landing screen. A bold hero header over two editorial feature tiles: each pairs
+ * a text column and a scalloped "cookie" icon badge, with the feature's own glyph
+ * bleeding oversized behind the content as a graphic anchor and a stadium
+ * "open" pill as the affordance.
  */
 @Composable
 fun HomeScreen(
     onOpenRateWeight: () -> Unit,
-    onOpenGold: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -57,32 +62,31 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // ── Hero header ──
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
             Text(
-                text = "Scale",
+                text = "Gramly",
                 style = MaterialTheme.typography.displayLarge,
                 fontWeight = FontWeight.Black,
             )
-            Spacer(Modifier.height(8.dp))
 
             // ── Feature tiles ──
             FeatureTile(
-                title = "Rate & Weight",
-                subtitle = "Daam se vajan • vajan se daam",
+                title = strings.homeRateWeightTitle,
+                subtitle = strings.homeRateWeightSubtitle,
                 icon = Icons.Filled.Calculate,
                 container = MaterialTheme.colorScheme.primaryContainer,
                 onContainer = MaterialTheme.colorScheme.onPrimaryContainer,
-                height = 188.dp,
+                height = 184.dp,
                 onClick = onOpenRateWeight,
             )
             FeatureTile(
-                title = "Gold Calculator",
-                subtitle = "Carat • labour • GST",
-                icon = Icons.Filled.Diamond,
+                title = strings.homeSettingsTitle,
+                subtitle = strings.homeSettingsSubtitle,
+                icon = Icons.Filled.Settings,
                 container = MaterialTheme.colorScheme.tertiaryContainer,
                 onContainer = MaterialTheme.colorScheme.onTertiaryContainer,
                 height = 168.dp,
-                onClick = onOpenGold,
+                onClick = onOpenSettings,
             )
             Spacer(Modifier.height(16.dp))
         }
@@ -96,7 +100,7 @@ private fun FeatureTile(
     icon: ImageVector,
     container: Color,
     onContainer: Color,
-    height: androidx.compose.ui.unit.Dp,
+    height: Dp,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -114,81 +118,84 @@ private fun FeatureTile(
         ),
     ) {
         Box(Modifier.fillMaxSize()) {
-            // Decorative arc — clipped to the card's rounded corner.
-            Box(
-                Modifier
-                    .size(200.dp)
+            // The feature's own glyph, oversized and tilted, bleeding off the
+            // bottom-right corner. The card clips it to its rounded shape.
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = onContainer.copy(alpha = 0.08f),
+                modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .offset(x = 60.dp, y = 64.dp)
-                    .clip(CircleShape)
-                    .background(onContainer.copy(alpha = 0.10f)),
+                    .size(200.dp)
+                    .offset(x = 44.dp, y = 52.dp)
+                    .rotate(-14f),
             )
 
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .padding(start = 24.dp, end = 22.dp, top = 22.dp, bottom = 22.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = onContainer.copy(alpha = 0.16f),
-                        contentColor = onContainer,
-                        modifier = Modifier.size(60.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(icon, contentDescription = null, modifier = Modifier.size(32.dp))
-                        }
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Black,
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = onContainer.copy(alpha = 0.82f),
+                        )
                     }
-                    Surface(
-                        shape = CircleShape,
-                        color = onContainer.copy(alpha = 0.16f),
-                        contentColor = onContainer,
-                        modifier = Modifier.size(44.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
-                    }
+                    OpenPill(onContainer = onContainer)
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = onContainer.copy(alpha = 0.85f),
-                    )
+                // Scalloped icon badge — the expressive focal point.
+                Surface(
+                    shape = CookieBadge,
+                    color = onContainer.copy(alpha = 0.16f),
+                    contentColor = onContainer,
+                    modifier = Modifier.size(76.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(36.dp))
+                    }
                 }
             }
         }
     }
 }
 
+/** Stadium "Kholein →" affordance — a clear, label-led alternative to a bare arrow button. */
 @Composable
-private fun InfoPill(text: String) {
+private fun OpenPill(onContainer: Color) {
     Surface(
-        shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = CircleShape,
+        color = onContainer.copy(alpha = 0.14f),
+        contentColor = onContainer,
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        )
+        Row(
+            modifier = Modifier.padding(start = 14.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = LocalStrings.current.openLabel,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }

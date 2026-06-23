@@ -27,7 +27,7 @@ object Calculator {
         val amount = parse(amountRaw)
         if (price == null && amount == null) return CalcResult.Empty
         if (price == null || amount == null) return CalcResult.Empty
-        if (price == 0.0) return CalcResult.Error("Bhaav 0 nahi ho sakta")
+        if (price == 0.0) return CalcResult.Error
         val weightKg = amount / price
         return CalcResult.Success(
             display = formatWeight(weightKg),
@@ -60,15 +60,6 @@ object Calculator {
             minimumFractionDigits = 0
         }
 
-    private val rupeeFormat2: NumberFormat =
-        NumberFormat.getNumberInstance(Locale.forLanguageTag("en-IN")).apply {
-            maximumFractionDigits = 2
-            minimumFractionDigits = 2
-        }
-
-    /** Always two decimals — used for money breakdowns (₹50.84, ₹254.40). */
-    fun formatRupees2(amount: Double): String = "₹" + rupeeFormat2.format(amount)
-
     /** 0.5 -> "500 g", 1.25 -> "1 kg 250 g", 2.0 -> "2 kg". */
     fun formatWeight(kg: Double): String {
         val totalGrams = (kg * 1000.0).roundToLong()
@@ -100,15 +91,13 @@ object Calculator {
     }
 }
 
-enum class WeightUnit(val label: String) { GRAM("g"), KILOGRAM("kg") }
-
 /** Outcome of a live calculation. */
 sealed interface CalcResult {
     /** Not enough input yet — show a friendly hint, never "NaN". */
     data object Empty : CalcResult
 
-    /** Invalid input (e.g. price 0) — show [message]. */
-    data class Error(val message: String) : CalcResult
+    /** Invalid input (price is 0). The UI supplies the localized message. */
+    data object Error : CalcResult
 
     /** A computed answer. [display] is formatted for the hero card; [plain] for clipboard. */
     data class Success(val display: String, val plain: String) : CalcResult

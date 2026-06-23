@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
-private enum class Screen { Home, RateWeight, Gold }
+private enum class Screen { Home, RateWeight, Settings }
 
-private val TABS = listOf("Weight", "Rate")
-
-/** Top-level navigator. Lightweight state-based routing for three destinations. */
+/** Top-level navigator. Lightweight state-based routing across destinations. */
 @Composable
 fun ScaleApp(vm: ScaleViewModel = viewModel()) {
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
@@ -61,36 +60,39 @@ fun ScaleApp(vm: ScaleViewModel = viewModel()) {
 
     BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
 
-    AnimatedContent(
-        targetState = screen,
-        transitionSpec = {
-            if (!animationsEnabled) {
-                EnterTransition.None togetherWith ExitTransition.None
-            } else {
-                val forward = targetState.ordinal > initialState.ordinal
-                val dir = if (forward) 1 else -1
-                (slideInHorizontally { w -> dir * w } + fadeIn())
-                    .togetherWith(slideOutHorizontally { w -> -dir * w } + fadeOut())
+    CompositionLocalProvider(LocalStrings provides stringsFor(vm.language)) {
+        AnimatedContent(
+            targetState = screen,
+            transitionSpec = {
+                if (!animationsEnabled) {
+                    EnterTransition.None togetherWith ExitTransition.None
+                } else {
+                    val forward = targetState.ordinal > initialState.ordinal
+                    val dir = if (forward) 1 else -1
+                    (slideInHorizontally { w -> dir * w } + fadeIn())
+                        .togetherWith(slideOutHorizontally { w -> -dir * w } + fadeOut())
+                }
+            },
+            label = "screen",
+        ) { current ->
+            when (current) {
+                Screen.Home -> HomeScreen(
+                    onOpenRateWeight = { screen = Screen.RateWeight },
+                    onOpenSettings = { screen = Screen.Settings },
+                )
+
+                Screen.RateWeight -> RateWeightScreen(
+                    vm = vm,
+                    animationsEnabled = animationsEnabled,
+                    onBack = { screen = Screen.Home },
+                )
+
+                Screen.Settings -> SettingsScreen(
+                    currentLanguage = vm.language,
+                    onLanguageChange = vm::changeLanguage,
+                    onBack = { screen = Screen.Home },
+                )
             }
-        },
-        label = "screen",
-    ) { current ->
-        when (current) {
-            Screen.Home -> HomeScreen(
-                onOpenRateWeight = { screen = Screen.RateWeight },
-                onOpenGold = { screen = Screen.Gold },
-            )
-
-            Screen.RateWeight -> RateWeightScreen(
-                vm = vm,
-                animationsEnabled = animationsEnabled,
-                onBack = { screen = Screen.Home },
-            )
-
-            Screen.Gold -> GoldScreen(
-                vm = vm,
-                onBack = { screen = Screen.Home },
-            )
         }
     }
 }
@@ -101,7 +103,10 @@ private fun RateWeightScreen(
     animationsEnabled: Boolean,
     onBack: () -> Unit,
 ) {
-    val pagerState = rememberPagerState(pageCount = { TABS.size })
+    val strings = LocalStrings.current
+    // Rate first, then Weight.
+    val tabLabels = listOf(strings.tabRate, strings.tabWeight)
+    val pagerState = rememberPagerState(pageCount = { tabLabels.size })
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboard = LocalClipboardManager.current
@@ -109,7 +114,7 @@ private fun RateWeightScreen(
 
     val onCopy: (String) -> Unit = { value ->
         clipboard.setText(AnnotatedString(value))
-        scope.launch { snackbarHostState.showSnackbar("Copy ho gaya: $value") }
+        scope.launch { snackbarHostState.showSnackbar(strings.copiedPrefix + value) }
     }
 
     Scaffold(
@@ -118,11 +123,11 @@ private fun RateWeightScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text("Rate & Weight", fontWeight = FontWeight.Black) },
-                subtitle = { Text("Daam aur vajan ka turant hisaab") },
+                title = { Text(strings.rateWeightTitle, fontWeight = FontWeight.Black) },
+                subtitle = { Text(strings.rateWeightSubtitle) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wapas")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -131,14 +136,14 @@ private fun RateWeightScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // Connected button group as the Weight / Rate switcher.
+            // Connected button group as the Rate / Weight switcher.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                TABS.forEachIndexed { index, title ->
+                tabLabels.forEachIndexed { index, title ->
                     ToggleButton(
                         checked = pagerState.currentPage == index,
                         onCheckedChange = { scope.launch { pagerState.animateScrollToPage(index) } },
@@ -158,9 +163,13 @@ private fun RateWeightScreen(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
+                // On the last input field, the IME action jumps to the other tab.
+                val onImeNext: () -> Unit = {
+                    scope.launch { pagerState.animateScrollToPage(1 - page) }
+                }
                 when (page) {
-                    0 -> WeightTab(vm, animationsEnabled, onCopy)
-                    else -> RateTab(vm, animationsEnabled, onCopy)
+                    0 -> RateTab(vm, animationsEnabled, onCopy, onImeNext)
+                    else -> WeightTab(vm, animationsEnabled, onCopy, onImeNext)
                 }
             }
         }

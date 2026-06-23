@@ -20,20 +20,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ivor.scale.domain.CalcResult
 
-private const val PRICE_LABEL = "Bhaav /kg"
-
 /** Weight tab: money in, weight out. */
 @Composable
 fun WeightTab(
     vm: ScaleViewModel,
     animationsEnabled: Boolean,
     onCopy: (String) -> Unit,
+    onImeNext: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     val result = vm.weightResult
     CalculatorScaffold(
         result = result,
-        resultLabel = "Result (vajan)",
-        emptyHint = "Bhaav aur rakam bharein",
+        resultLabel = strings.resultWeight,
+        emptyHint = strings.hintWeight,
         onClear = { vm.clearWeightTab() },
         animationsEnabled = animationsEnabled,
         onCopy = onCopy,
@@ -41,16 +41,17 @@ fun WeightTab(
         NumberField(
             value = vm.pricePerKg,
             onValueChange = vm::onPriceChange,
-            label = PRICE_LABEL,
+            label = strings.fieldPrice,
             prefix = "₹",
             isError = result is CalcResult.Error,
         )
         NumberField(
             value = vm.amount,
             onValueChange = vm::onAmountChange,
-            label = "Rakam",
+            label = strings.fieldAmount,
             prefix = "₹",
-            imeAction = ImeAction.Done,
+            imeAction = ImeAction.Next,
+            onImeAction = onImeNext,
         )
     }
 }
@@ -61,12 +62,14 @@ fun RateTab(
     vm: ScaleViewModel,
     animationsEnabled: Boolean,
     onCopy: (String) -> Unit,
+    onImeNext: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     val result = vm.rateResult
     CalculatorScaffold(
         result = result,
-        resultLabel = "Result (rakam)",
-        emptyHint = "Bhaav aur vajan bharein",
+        resultLabel = strings.resultAmount,
+        emptyHint = strings.hintAmount,
         onClear = { vm.clearRateTab() },
         animationsEnabled = animationsEnabled,
         onCopy = onCopy,
@@ -74,23 +77,24 @@ fun RateTab(
         NumberField(
             value = vm.pricePerKg,
             onValueChange = vm::onPriceChange,
-            label = PRICE_LABEL,
+            label = strings.fieldPrice,
             prefix = "₹",
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             NumberField(
                 value = vm.rateKilos,
                 onValueChange = vm::onRateKilosChange,
-                label = "Kilo",
+                label = strings.fieldKilo,
                 suffix = "kg",
                 modifier = Modifier.weight(1f),
             )
             NumberField(
                 value = vm.rateGrams,
                 onValueChange = vm::onRateGramsChange,
-                label = "Gram",
+                label = strings.fieldGram,
                 suffix = "g",
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Next,
+                onImeAction = onImeNext,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -111,6 +115,7 @@ private fun CalculatorScaffold(
     onCopy: (String) -> Unit,
     inputs: @Composable () -> Unit,
 ) {
+    val strings = LocalStrings.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -136,11 +141,11 @@ private fun CalculatorScaffold(
                 .fillMaxWidth()
                 .expressivePress(clearSource),
         ) {
-            Text("Saaf karein")
+            Text(strings.clear)
         }
 
         Text(
-            text = "Tip: bhaav dono tab me ek saath rehta hai",
+            text = strings.tipSharedPrice,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

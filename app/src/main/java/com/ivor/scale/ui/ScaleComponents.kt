@@ -110,14 +110,15 @@ fun ResultHeroCard(
     onCopy: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalStrings.current
     val containerColor = when (result) {
         is CalcResult.Success -> MaterialTheme.colorScheme.primaryContainer
-        is CalcResult.Error -> MaterialTheme.colorScheme.errorContainer
+        CalcResult.Error -> MaterialTheme.colorScheme.errorContainer
         CalcResult.Empty -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val contentColor = when (result) {
         is CalcResult.Success -> MaterialTheme.colorScheme.onPrimaryContainer
-        is CalcResult.Error -> MaterialTheme.colorScheme.onErrorContainer
+        CalcResult.Error -> MaterialTheme.colorScheme.onErrorContainer
         CalcResult.Empty -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -154,7 +155,7 @@ fun ResultHeroCard(
                     )
 
                 else -> {
-                    val target = if (result is CalcResult.Error) result.message else emptyHint
+                    val target = if (result is CalcResult.Error) strings.errorPriceZero else emptyHint
                     AnimatedContent(
                         targetState = target,
                         transitionSpec = {
@@ -179,7 +180,7 @@ fun ResultHeroCard(
             if (result is CalcResult.Success) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Tap to copy",
+                        text = strings.tapToCopy,
                         style = MaterialTheme.typography.labelMedium,
                         color = LocalContentColor.current.copy(alpha = 0.6f),
                     )
