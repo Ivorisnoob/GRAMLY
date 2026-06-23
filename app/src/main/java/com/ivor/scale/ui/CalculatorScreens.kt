@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ivor.scale.domain.CalcResult
 
-private const val PRICE_LABEL = "Kilo ka bhaav (₹/kg)"
+private const val PRICE_LABEL = "Bhaav /kg"
 
 /** Weight tab: money in, weight out. */
 @Composable
@@ -48,7 +48,7 @@ fun WeightTab(
         NumberField(
             value = vm.amount,
             onValueChange = vm::onAmountChange,
-            label = "Khareed ki rakam (₹)",
+            label = "Rakam",
             prefix = "₹",
             imeAction = ImeAction.Done,
         )

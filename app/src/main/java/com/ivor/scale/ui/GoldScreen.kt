@@ -1,10 +1,14 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalMaterial3Api::class,
+)
 
 package com.ivor.scale.ui
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -75,7 +82,7 @@ fun GoldScreen(
             NumberField(
                 value = vm.goldPrice24,
                 onValueChange = vm::onGoldPriceChange,
-                label = "Gold price 24 Carat (₹/gram)",
+                label = "24K bhaav /g",
                 prefix = "₹",
             )
 
@@ -96,14 +103,14 @@ fun GoldScreen(
                 NumberField(
                     value = vm.goldGrams,
                     onValueChange = vm::onGoldGramsChange,
-                    label = "Vajan (gram)",
+                    label = "Gram",
                     suffix = "g",
                     modifier = Modifier.weight(1f),
                 )
                 NumberField(
                     value = vm.goldMilligrams,
                     onValueChange = vm::onGoldMilligramsChange,
-                    label = "Vajan (milligram)",
+                    label = "Milligram",
                     suffix = "mg",
                     modifier = Modifier.weight(1f),
                 )
@@ -113,14 +120,14 @@ fun GoldScreen(
                 NumberField(
                     value = vm.goldLabourPct,
                     onValueChange = vm::onGoldLabourChange,
-                    label = "Labour charge %",
+                    label = "Labour",
                     suffix = "%",
                     modifier = Modifier.weight(1f),
                 )
                 NumberField(
                     value = vm.goldGstPct,
                     onValueChange = vm::onGoldGstChange,
-                    label = "GST %",
+                    label = "GST",
                     suffix = "%",
                     imeAction = ImeAction.Done,
                     modifier = Modifier.weight(1f),
@@ -144,10 +151,10 @@ fun GoldScreen(
 }
 
 /**
- * Standard (non-connected) ButtonGroup for single-select carat purity. Each
- * button uses the default shape-morphing ToggleButton shapes, and the group's
- * `animateWidth` makes the pressed button expand while its neighbours compress —
- * the signature expressive ButtonGroup interaction.
+ * Standard [ButtonGroup] for single-select carat purity. Pressing a carat
+ * expands it while its neighbours compress (`animateWidth`), and the selected
+ * one keeps its checked shape. Compact padding lets all purities sit in one row;
+ * any that don't fit gracefully overflow into a menu.
  */
 @Composable
 private fun CaratButtonGroup(
@@ -155,11 +162,14 @@ private fun CaratButtonGroup(
     selected: Int,
     onSelect: (Int) -> Unit,
 ) {
-    val sources = remember(options.size) { List(options.size) { MutableInteractionSource() } }
+    val interactionSources = remember(options.size) {
+        List(options.size) { MutableInteractionSource() }
+    }
     ButtonGroup(
         overflowIndicator = { menuState ->
             ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
         },
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
         modifier = Modifier.fillMaxWidth(),
     ) {
         options.forEachIndexed { index, karat ->
@@ -168,10 +178,18 @@ private fun CaratButtonGroup(
                     ToggleButton(
                         checked = selected == karat,
                         onCheckedChange = { onSelect(karat) },
-                        interactionSource = sources[index],
-                        modifier = Modifier.animateWidth(sources[index]),
+                        shapes = when (index) {
+                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                        interactionSource = interactionSources[index],
+                        modifier = Modifier
+                            .semantics { role = Role.RadioButton }
+                            .animateWidth(interactionSources[index]),
                     ) {
-                        Text("${karat}K")
+                        Text("${karat}K", softWrap = false, maxLines = 1)
                     }
                 },
                 menuContent = {
