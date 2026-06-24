@@ -8,6 +8,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import com.ivor.scale.domain.CalcResult
 import com.ivor.scale.domain.Calculator
+import com.ivor.scale.domain.ConvertResult
+import com.ivor.scale.domain.MassUnit
+import com.ivor.scale.domain.PieceResult
 
 /**
  * Holds calculator state plus the app language. `pricePerKg` is deliberately
@@ -36,6 +39,22 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
     var itemName by mutableStateOf("")
         private set
 
+    // Piece calculator — known count + its price, and the count the user wants.
+    var pieceKnownQty by mutableStateOf("")
+        private set
+    var pieceKnownPrice by mutableStateOf("")
+        private set
+    var pieceDesiredQty by mutableStateOf("")
+        private set
+
+    // Quantity Price converter — a quantity (in kg or g) and its price.
+    var convertQuantity by mutableStateOf("")
+        private set
+    var convertPrice by mutableStateOf("")
+        private set
+    var convertUnit by mutableStateOf(MassUnit.KG)
+        private set
+
     // App language (persisted across launches).
     var language by mutableStateOf(loadLanguage())
         private set
@@ -46,14 +65,30 @@ class ScaleViewModel(app: Application) : AndroidViewModel(app) {
     fun onRateGramsChange(v: String) { rateGrams = sanitize(v) }
     fun onItemNameChange(v: String) { itemName = v.take(24) }
 
+    fun onPieceKnownQtyChange(v: String) { pieceKnownQty = sanitize(v) }
+    fun onPieceKnownPriceChange(v: String) { pieceKnownPrice = sanitize(v) }
+    fun onPieceDesiredQtyChange(v: String) { pieceDesiredQty = sanitize(v) }
+
+    fun onConvertQuantityChange(v: String) { convertQuantity = sanitize(v) }
+    fun onConvertPriceChange(v: String) { convertPrice = sanitize(v) }
+    fun onConvertUnitChange(unit: MassUnit) { convertUnit = unit }
+
     val weightResult: CalcResult
         get() = Calculator.weightResult(pricePerKg, amount)
 
     val rateResult: CalcResult
         get() = Calculator.rateResult(pricePerKg, rateKilos, rateGrams)
 
+    val pieceResult: PieceResult
+        get() = Calculator.pieceResult(pieceKnownQty, pieceKnownPrice, pieceDesiredQty)
+
+    val convertResult: ConvertResult
+        get() = Calculator.convertResult(convertQuantity, convertUnit, convertPrice)
+
     fun clearWeightTab() { amount = "" }
     fun clearRateTab() { rateKilos = ""; rateGrams = ""; itemName = "" }
+    fun clearPiece() { pieceKnownQty = ""; pieceKnownPrice = ""; pieceDesiredQty = "" }
+    fun clearConvert() { convertQuantity = ""; convertPrice = "" }
 
     // ---- Rate tab running bill -------------------------------------------
 

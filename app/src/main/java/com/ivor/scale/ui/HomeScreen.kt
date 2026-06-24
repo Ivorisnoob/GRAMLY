@@ -18,6 +18,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +51,8 @@ private val CookieBadge = ScallopedShape(lobes = 8, depth = 0.16f)
 @Composable
 fun HomeScreen(
     onOpenRateWeight: () -> Unit,
+    onOpenPiece: () -> Unit,
+    onOpenConvert: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val strings = LocalStrings.current
@@ -80,11 +84,29 @@ fun HomeScreen(
                 onClick = onOpenRateWeight,
             )
             FeatureTile(
+                title = strings.homePieceTitle,
+                subtitle = strings.homePieceSubtitle,
+                icon = Icons.Filled.Numbers,
+                container = MaterialTheme.colorScheme.secondaryContainer,
+                onContainer = MaterialTheme.colorScheme.onSecondaryContainer,
+                height = 184.dp,
+                onClick = onOpenPiece,
+            )
+            FeatureTile(
+                title = strings.homeConvertTitle,
+                subtitle = strings.homeConvertSubtitle,
+                icon = Icons.Filled.Scale,
+                container = MaterialTheme.colorScheme.tertiaryContainer,
+                onContainer = MaterialTheme.colorScheme.onTertiaryContainer,
+                height = 184.dp,
+                onClick = onOpenConvert,
+            )
+            FeatureTile(
                 title = strings.homeSettingsTitle,
                 subtitle = strings.homeSettingsSubtitle,
                 icon = Icons.Filled.Settings,
-                container = MaterialTheme.colorScheme.tertiaryContainer,
-                onContainer = MaterialTheme.colorScheme.onTertiaryContainer,
+                container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                onContainer = MaterialTheme.colorScheme.onSurface,
                 height = 168.dp,
                 onClick = onOpenSettings,
             )
