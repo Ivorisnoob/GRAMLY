@@ -60,7 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-private enum class Screen { Home, RateWeight, Settings }
+private enum class Screen { Home, RateWeight, Piece, Convert, Settings }
 
 /** Top-level navigator. Lightweight state-based routing across destinations. */
 @Composable
@@ -128,10 +128,24 @@ fun ScaleApp(vm: ScaleViewModel = viewModel()) {
             when (current) {
                 Screen.Home -> HomeScreen(
                     onOpenRateWeight = { screen = Screen.RateWeight },
+                    onOpenPiece = { screen = Screen.Piece },
+                    onOpenConvert = { screen = Screen.Convert },
                     onOpenSettings = { screen = Screen.Settings },
                 )
 
                 Screen.RateWeight -> RateWeightScreen(
+                    vm = vm,
+                    animationsEnabled = animationsEnabled,
+                    onBack = { screen = Screen.Home },
+                )
+
+                Screen.Piece -> PieceScreen(
+                    vm = vm,
+                    animationsEnabled = animationsEnabled,
+                    onBack = { screen = Screen.Home },
+                )
+
+                Screen.Convert -> ConvertScreen(
                     vm = vm,
                     animationsEnabled = animationsEnabled,
                     onBack = { screen = Screen.Home },

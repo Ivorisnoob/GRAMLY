@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ivor.scale.domain.CalcResult
+import com.ivor.scale.domain.ResultLine
 
 /** True unless the user has disabled animations system-wide (accessibility). */
 @Composable
@@ -224,6 +227,137 @@ fun ResultHeroCard(
                         text = strings.tapToCopy,
                         style = MaterialTheme.typography.labelMedium,
                         color = LocalContentColor.current.copy(alpha = 0.6f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** A single labelled output value for [MultiResultCard]. */
+data class LabeledValue(val label: String, val line: ResultLine)
+
+/**
+ * A hero card for calculations with more than one answer (Piece, Converter).
+ * The first value renders as the giant hero numeral; the rest stack below as
+ * labelled rows. Tapping the hero or any row copies that value.
+ *
+ * Pass an empty [values] list for the hint/error states — [isError] picks which.
+ */
+@Composable
+fun MultiResultCard(
+    headerLabel: String,
+    isError: Boolean,
+    emptyHint: String,
+    errorText: String,
+    values: List<LabeledValue>,
+    animationsEnabled: Boolean,
+    onCopy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val strings = LocalStrings.current
+    val isSuccess = values.isNotEmpty()
+    val containerColor = when {
+        isSuccess -> MaterialTheme.colorScheme.primaryContainer
+        isError -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val contentColor = when {
+        isSuccess -> MaterialTheme.colorScheme.onPrimaryContainer
+        isError -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (isSuccess) {
+                val hero = values.first()
+                // Hero value — tap anywhere on it to copy.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCopy(hero.line.plain) },
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = hero.label.uppercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = contentColor.copy(alpha = 0.7f),
+                    )
+                    HeroNumeral(
+                        text = hero.line.display,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = contentColor,
+                    )
+                }
+
+                values.drop(1).forEach { value ->
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = contentColor.copy(alpha = 0.15f),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCopy(value.line.plain) },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = value.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = contentColor.copy(alpha = 0.85f),
+                        )
+                        Text(
+                            text = value.line.display,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = strings.tapToCopy,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = LocalContentColor.current.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            } else {
+                Text(
+                    text = headerLabel.uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = contentColor.copy(alpha = 0.7f),
+                )
+                AnimatedContent(
+                    targetState = if (isError) errorText else emptyHint,
+                    transitionSpec = {
+                        if (animationsEnabled) {
+                            (slideInVertically { it / 2 } + fadeIn())
+                                .togetherWith(slideOutVertically { -it / 2 } + fadeOut())
+                        } else {
+                            EnterTransition.None togetherWith ExitTransition.None
+                        }
+                    },
+                    label = "multiResult",
+                ) { text ->
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
